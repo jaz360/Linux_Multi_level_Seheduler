@@ -1,0 +1,327 @@
+
+
+#include<stdio.h>
+#include<stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <pthread.h>
+
+/*
+**********************************************************************************
+ NOTE I used -pthread library for pthreads in order to compile eg) gcc Q3.c -o Q3 -lrt
+**********************************************************************************
+*/
+
+struct Node {
+	int pid;
+	int enterTime;
+	struct Node* next;
+	
+};
+
+
+struct Queue {
+  struct Node *head, *tail;
+};
+
+
+
+
+int n = 0;
+pthread_t LTStid;
+pthread_t STStid;
+
+
+pthread_attr_t LTSattr;
+pthread_attr_t STSattr;
+
+
+
+
+struct Queue *initQueue (){
+	srand(time(NULL));
+	struct Queue *thisQueue = malloc(sizeof *thisQueue);
+    thisQueue->head = NULL;
+    thisQueue->tail = NULL;
+    return thisQueue;
+}
+
+struct Queue *JobQueue;
+struct Queue *ReadyQueue;
+
+
+
+void Enqueue(struct Queue *paramQueue,int x) {
+	
+
+	struct Node* temp = 
+		(struct Node*)malloc(sizeof(struct Node));
+		
+	temp->pid =x; 
+	temp->enterTime= (rand())%30+1;
+	
+	temp->next = NULL;
+	if(paramQueue->head == NULL && paramQueue->tail == NULL){
+		paramQueue->head = paramQueue->tail = temp;
+		return;
+	}
+	
+	paramQueue->tail->next = temp;
+    paramQueue->tail = temp;
+
+}
+
+
+int ReadyEnqueue(struct Queue *paramQueue,int x,int y) {
+	
+
+	struct Node* temp = 
+		(struct Node*)malloc(sizeof(struct Node));
+		if (n!=5){
+			n++;
+	temp->pid =x; 
+	temp->enterTime= y; 
+	temp->next = NULL;
+	if(paramQueue->head == NULL && paramQueue->tail == NULL){
+		paramQueue->head = paramQueue->tail = temp;
+		
+	}
+	
+	paramQueue->tail->next = temp;
+    paramQueue->tail = temp;
+    return n;
+}else {
+
+	printf("\n[LTS] Ready Queue is Full, cannot enter more\n");
+	return n;
+}
+
+}
+
+
+void ReadyEnqueue2(struct Queue *paramQueue,int x,int y) {
+	
+
+	struct Node* temp = 
+		(struct Node*)malloc(sizeof(struct Node));
+		
+			
+	temp->pid =x; 
+	temp->enterTime= y; 
+	temp->next = NULL;
+	if(paramQueue->head == NULL && paramQueue->tail == NULL){
+	paramQueue->head = paramQueue->tail = temp;
+		
+	}
+	
+	paramQueue->tail->next = temp;
+    paramQueue->tail = temp;
+    
+}
+
+
+
+struct Node* Dequeue(struct Queue *paramQueue) {
+	struct Node* temp = paramQueue->head;
+	
+	if(paramQueue->head == NULL) {
+		printf("Queue is Empty\n");
+		
+	}
+	if(paramQueue->head == paramQueue->tail) {
+		paramQueue->head = paramQueue->tail = NULL;
+	}
+	else {
+		paramQueue->head = paramQueue->head->next;
+	}
+	
+	return temp;
+	free(temp);
+}
+
+
+
+void Print() {
+	struct Node* temp = JobQueue->head;
+	while(temp != NULL) {
+		printf("[Kernel] Process %d  created with Time = %d \n",temp->pid,temp->enterTime);
+		temp = temp->next;
+	}
+	printf("\n");
+}
+
+void LTSprint(struct Queue *paramQueue) {
+	struct Node* temp = paramQueue->head;
+	if (temp == NULL){
+		printf("[LTS] Job Queue: EMPTY \n");
+	}else{
+	while(temp != NULL) {
+		printf("[LTS] Job Queue: [Process %d: Time %d]\n",temp->pid,temp->enterTime);
+		temp = temp->next;
+	}
+
+}
+
+}
+
+void STSprint(struct Queue *paramQueue) {
+	struct Node* temp = ReadyQueue->head;
+	if (temp == NULL){
+		printf("[LTS] Ready Queue: EMPTY \n");
+	}else{
+	while(temp != NULL) {
+		printf("[LTS] Ready Queue: [Process %d: Time %d]\n",temp->pid,temp->enterTime);
+		temp = temp->next;
+	}
+	}
+	printf("\n");
+}
+
+void LTSprint2(struct Queue *paramQueue) {
+	struct Node* temp = paramQueue->head;
+	if (temp == NULL){
+		printf("[STS] Job Queue: EMPTY \n");
+	}else{
+	while(temp != NULL) {
+		printf("[STS] Job Queue: [Process %d: Time %d]\n",temp->pid,temp->enterTime);
+		temp = temp->next;
+	}
+
+}
+	printf("\n");
+}
+
+void STSprint2(struct Queue *paramQueue) {
+	struct Node* temp = ReadyQueue->head;
+	if (temp == NULL){
+		printf("[STS] Ready Queue: EMPTY \n");
+	}else{
+	while(temp != NULL) {
+		printf("[STS] Ready Queue: [Process %d: Time %d]\n",temp->pid,temp->enterTime);
+		temp = temp->next;
+	}
+	}
+	printf("\n");
+}
+
+
+
+
+
+void *LTS(void *param){
+printf("\n [Kernel] Long Term Scheduler Invoked\n");
+Print(JobQueue);
+
+printf("\n----------------------------------------------------\n");
+LTSprint(JobQueue);
+
+STSprint(ReadyQueue);
+int i;
+int a;
+for (i=0;i<6;i++){
+if (a != 5){
+struct Node *get = Dequeue(JobQueue);
+
+a = ReadyEnqueue(ReadyQueue,get->pid,get->enterTime);
+
+printf("\n [LTS] Process %d removed from the Job Queue and inserted to the Ready Queue\n",get->pid );
+}
+else{
+	printf("\n[LTS] Ready Queue is Full, cannot enter more\n");
+}
+
+}
+
+
+STSprint(ReadyQueue); 
+
+LTSprint(JobQueue);
+
+return NULL;
+}
+
+
+
+void *STS(void *param){
+
+	printf("\n[Kernel] Short Term Scheduler Invoked\n");
+
+
+printf("\n----------------------------------------------------\n");
+LTSprint2(JobQueue);
+printf("\n");
+STSprint2(ReadyQueue);
+
+
+struct Node *get ;
+
+
+while (ReadyQueue->head != NULL){
+get = Dequeue(ReadyQueue);
+printf("[STS] Process %d now executing\n", get->pid );
+get->enterTime -= 2;
+
+if (get->enterTime>0){
+
+
+ReadyEnqueue2(ReadyQueue,get->pid,get->enterTime);
+printf("[STS] Process %d with remaining time %d enqueued to the Ready Queue\n", get->pid,get->enterTime);		
+}else {
+	printf("[STS] Process %d terminated \n",get->pid);
+}
+
+
+}
+printf("\n");
+LTSprint2(JobQueue);
+STSprint2(ReadyQueue);
+
+while (JobQueue->head !=NULL){
+	n=0;
+	
+	LTS(JobQueue);
+	STS(JobQueue);
+}
+
+
+ return NULL;
+
+}
+
+
+
+
+
+int main(int argc, char *argv[]){
+	 JobQueue = initQueue();
+	 ReadyQueue = initQueue();
+
+
+int i;
+		for (i = 1; i<=100; i++){
+
+	 Enqueue(JobQueue,i);
+	  
+	}
+
+
+
+	pthread_attr_init(&LTSattr);
+	pthread_create(&LTStid, &LTSattr, LTS, NULL);
+	pthread_join(LTStid,NULL);
+
+	pthread_attr_init(&STSattr);
+	pthread_create(&STStid, &LTSattr, STS, NULL);
+	pthread_join(STStid,NULL);
+
+
+
+  pthread_exit(NULL);
+
+
+	
+
+	
+	
+}
+ 
